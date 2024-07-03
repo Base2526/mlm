@@ -297,6 +297,30 @@ const modelExists =()=>{
       await Model.ManageLottery.deleteMany({})
     }
   });
+
+  Model.Member.find({}, async(err, result)=> {
+    if (result.length > 0) {
+    } else {
+      let newMember = new Model.Member({
+                              username: "username",
+                              password: "password",
+                              email: "email@banlist.info",
+                              displayName: "displayName",
+                            });
+      await newMember.save();
+      await Model.Member.deleteMany({})
+    }
+  });
+
+  Model.MLM.find({}, async(err, result)=> {
+    if (result.length > 0) {
+    } else {
+      let newMLM = new Model.MLM({ memberId: new mongoose.Types.ObjectId() });
+      
+      await newMLM.save();
+      await Model.MLM.deleteMany({})
+    }
+  });
 }
 
 // TODO: initial and connect to MongoDB

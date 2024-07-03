@@ -86,6 +86,14 @@ export default gql`
     avatar: FileInput
   }
 
+  input MemberInput {
+    username: String!
+    password: String!
+    email: String!
+    displayName: String
+    avatar: FileInput
+  }
+
   enum AuthType {
     GOOGLE
     GITHUB
@@ -829,6 +837,8 @@ export default gql`
     content(input: JSON): JSON
     pay(input: JSON): JSON
     lotteryClone(_id: ID!): JSON 
+
+    test_addmember(input: MemberInput): JSON
   }
 
   type Subscription {
