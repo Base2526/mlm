@@ -3922,6 +3922,26 @@ export default {
         executionTime: `Time to execute = ${ (Date.now() - start) / 1000 } seconds`
       }
     },
+
+    async test_addmember(parent, args, context, info) {
+      let start     = Date.now()
+      let { input } = args
+      
+      let member = await Utils.getMember({ email: input.email } ) 
+      if(!_.isNull(member)) throw new AppError(Constants.ERROR, "EXITING EMAIL")
+
+      let newInput =  {...input,  username: input.username?.toLowerCase(),
+                                  password: cryptojs.AES.encrypt( input.password, process.env.JWT_SECRET).toString(),
+                                  displayName: _.isEmpty(input.displayName) ? input.username : input.displayName ,
+                                  lastAccess: Date.now(), 
+                                  isOnline: true}
+              
+      await Model.Member.create(newInput);
+      return {
+        status: true,
+        executionTime: `Time to execute = ${ (Date.now() - start) / 1000 } seconds`
+      }
+    },
   },
   Subscription:{
     me: {

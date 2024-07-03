@@ -590,6 +590,14 @@ export const getUser = async(query, without_password = true) =>{
     return  await Model.User.findOne( query, fields )
 }
 
+export const getMember = async(query, without_password = true) =>{
+    let fields = { username: 1, password: 1, email: 1, displayName: 1 }
+    if(without_password){
+        fields = { username: 1, email: 1, displayName: 1 }
+    }
+    return  await Model.User.findOne( query, fields )
+}
+
 export const getUserFull = async(query) =>{
     let user =  await Model.User.findOne(query, { username: 1, email: 1, displayName: 1, banks: 1, roles: 1, avatar: 1, subscriber: 1, producer: 1, lastAccess: 1, lockAccount: 1 } )
 

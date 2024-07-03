@@ -26,6 +26,10 @@ import ContactUsModel from "./ContactUsModel"
 import TestModel from "./TestModel"
 import ManageLotteryModel from "./ManageLotteryModel"
 
+
+import MemberModel from "./MemberModel"
+import MLMModel from './MLMModel'
+
 module.exports =  {
     Bank:BankModel,
     Post:PostModel,
@@ -53,5 +57,9 @@ module.exports =  {
     DateLottery: DateLotteryModel,
     ContactUs: ContactUsModel,
     Test: TestModel,
-    ManageLottery: ManageLotteryModel
+    ManageLottery: ManageLotteryModel,
+
+
+    Member: MemberModel,
+    MLM: MLMModel,
 };
