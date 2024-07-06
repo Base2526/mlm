@@ -94,6 +94,10 @@ export default gql`
     avatar: FileInput
   }
 
+  input MLMInput {
+    parentId: ID!
+  }
+
   enum AuthType {
     GOOGLE
     GITHUB
@@ -505,6 +509,8 @@ export default gql`
 
     contents: JSON
     contentById(_id: ID!): JSON
+
+    mlmById(_id: ID!): JSON
   }  
   
   input RoomInput {
@@ -839,6 +845,7 @@ export default gql`
     lotteryClone(_id: ID!): JSON 
 
     test_addmember(input: MemberInput): JSON
+    test_addmlm(input: MLMInput): JSON
   }
 
   type Subscription {

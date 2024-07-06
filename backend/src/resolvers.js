@@ -1329,6 +1329,38 @@ export default {
       }
     },
 
+    async mlmById(parent, args, context, info) {
+      let start = Date.now()
+      let { req } = context
+      let { _id } = args
+
+      console.log("mlmById parentId:", _id)
+
+      // let { current_user } =  await Utils.checkAuth(req);
+      // let role = Utils.checkRole(current_user)
+      // if( role !== Constants.AMDINISTRATOR &&
+      //     role !== Constants.AUTHENTICATED && 
+      //     role !== Constants.SELLER ) throw new AppError(Constants.UNAUTHENTICATED, 'permission denied')
+
+
+      // let query =  { conversationId: mongoose.Types.ObjectId(conversationId) } 
+      // if(!_.isUndefined(startId)){
+      //   query ={ _id: { $gt: mongoose.Types.ObjectId(startId) }, conversationId: mongoose.Types.ObjectId(conversationId) };;
+      // }
+      
+      // let data = await Model.Message.find(query).skip(0).limit(100);
+      // let total = (await Model.Message.find({conversationId: mongoose.Types.ObjectId(conversationId)}, {_id: 1}))?.length
+
+      console.log(">>>", await Utils.mlmCal(_id, 5));
+
+      return {
+        status:true,
+        // data,
+        // total,
+        // mlm,
+        executionTime: `Time to execute = ${ (Date.now() - start) / 1000 } seconds`
+      }
+    },
   },
   Upload: GraphQLUpload,
   Mutation: {
@@ -3926,10 +3958,18 @@ export default {
     async test_addmember(parent, args, context, info) {
       let start     = Date.now()
       let { input } = args
-      
-      let member = await Utils.getMember({ email: input.email } ) 
-      if(!_.isNull(member)) throw new AppError(Constants.ERROR, "EXITING EMAIL")
 
+      if(!_.isNull( await Utils.getMember({
+                                            "$and": [{
+                                                "username": input.username
+                                            }, {
+                                                "email": input.email
+                                            }]
+                                          } ) )) throw new AppError(Constants.ERROR, "EXITING USERNAME AND EMAIL")
+      
+      if(!_.isNull(await Utils.getMember({ username: input.username } ))) throw new AppError(Constants.ERROR, "EXITING USERNAME")
+      if(!_.isNull( await Utils.getMember({ email: input.email } ) )) throw new AppError(Constants.ERROR, "EXITING EMAIL")
+      
       let newInput =  {...input,  username: input.username?.toLowerCase(),
                                   password: cryptojs.AES.encrypt( input.password, process.env.JWT_SECRET).toString(),
                                   displayName: _.isEmpty(input.displayName) ? input.username : input.displayName ,
@@ -3939,6 +3979,67 @@ export default {
       await Model.Member.create(newInput);
       return {
         status: true,
+        executionTime: `Time to execute = ${ (Date.now() - start) / 1000 } seconds`
+      }
+    },
+
+    async test_addmlm(parent, args, context, info) {
+      let start     = Date.now()
+      let { req } = context
+      let { input } = args
+
+      console.log("test_addmlm :", input, req.headers?.authorization)
+
+      // let { current_user } =  await Utils.checkAuth(req);
+      // if( Utils.checkRole(current_user) !== Constants.AUTHENTICATED &&
+      //     Utils.checkRole(current_user) !== Constants.SELLER  ) throw new AppError(Constants.UNAUTHENTICATED, 'permission denied')
+
+      // if(!_.isNull( await Utils.getMember({
+      //                                       "$and": [{
+      //                                           "username": input.username
+      //                                       }, {
+      //                                           "email": input.email
+      //                                       }]
+      //                                     } ) )) throw new AppError(Constants.ERROR, "EXITING USERNAME AND EMAIL")
+      
+      // if(!_.isNull(await Utils.getMember({ username: input.username } ))) throw new AppError(Constants.ERROR, "EXITING USERNAME")
+      // if(!_.isNull( await Utils.getMember({ email: input.email } ) )) throw new AppError(Constants.ERROR, "EXITING EMAIL")
+      
+      // let newInput =  {...input,  username: input.username?.toLowerCase(),
+      //                             password: cryptojs.AES.encrypt( input.password, process.env.JWT_SECRET).toString(),
+      //                             displayName: _.isEmpty(input.displayName) ? input.username : input.displayName ,
+      //                             lastAccess: Date.now(), 
+      //                             isOnline: true}
+              
+      let mlm = await Model.MLM.findOne({ parentId: input?.parentId })
+      if(!_.isNull(mlm)){
+        let childs = mlm?.childs
+
+        let child = _.find(childs, e =>e.childId.equals(mongoose.Types.ObjectId(req.headers?.authorization)))
+        if(_.isEmpty(child)){
+          childs = [...childs, {childId: req.headers?.authorization}]
+          await Model.MLM.updateOne({ _id: mlm?._id }, { childs });
+
+          return {
+            status: true,
+            message: "UPDATE CHILD",
+            executionTime: `Time to execute = ${ (Date.now() - start) / 1000 } seconds`
+          }
+        }
+
+        return {
+          status: false,
+          message: "EXITING CHILD",
+          executionTime: `Time to execute = ${ (Date.now() - start) / 1000 } seconds`
+        }
+      }
+
+      let newInput =  { parentId: input?.parentId, childs: [{childId: req.headers?.authorization}]}
+      await Model.MLM.create(newInput);
+
+      return {
+        status: true,
+        message: "PARENT NEW",
         executionTime: `Time to execute = ${ (Date.now() - start) / 1000 } seconds`
       }
     },

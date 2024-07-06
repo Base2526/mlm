@@ -595,7 +595,7 @@ export const getMember = async(query, without_password = true) =>{
     if(without_password){
         fields = { username: 1, email: 1, displayName: 1 }
     }
-    return  await Model.User.findOne( query, fields )
+    return  await Model.Member.findOne( query, fields )
 }
 
 export const getUserFull = async(query) =>{
@@ -802,4 +802,65 @@ export const cloneLottery = async(id) => {
     } finally {
         //   mongoose.disconnect();
     }
+}
+
+export const mlmCal = async(parentId, level) =>{
+    // console.log("mlmCal start ", parentId, level)
+    let result = [];
+    // const helper = async(level) =>{
+    //     if(level == 0){
+    //         console.log("mlmCal > helper : end")
+    //         return
+    //     }else{
+    //         let mlm = await Model.MLM.findOne({ parentId })
+
+    //         result = [...result, level]
+    //         console.log("mlmCal > helper :", result, level, mlm)
+    //     }
+    //     helper(level-1)
+    // }
+
+    // helper(level)
+
+    let mlm1 = await Model.MLM.findOne({ parentId })
+    let mmm1 = await getMember({ _id: parentId } )
+    // level #1
+    _.map(mlm1?.childs, async(value2, ii)=>{
+        // console.log("childs :", value)
+        let mlm2 = await Model.MLM.findOne({ parentId:  mongoose.Types.ObjectId(value2.childId) })
+        let mmm2 = await getMember({ _id: mongoose.Types.ObjectId(value2.childId) } )
+        console.log("Level #1 :", mmm1?.username, "(L1)", ii, mmm2?.username)
+
+        // level #2
+        _.map(mlm2?.childs, async(value3, iii)=>{
+            let mlm3 = await Model.MLM.findOne({ parentId:  mongoose.Types.ObjectId(value3.childId) })
+            let mmm3 = await getMember({ _id: mongoose.Types.ObjectId(value3.childId) } )
+            console.log("Level #2 :", mmm1?.username, "(L1)", ii, mmm2?.username, "(L2)", iii,  mmm3?.username)
+
+            // level #3
+            _.map(mlm3?.childs, async(value4, iiii)=>{
+                let mlm4 = await Model.MLM.findOne({ parentId:  mongoose.Types.ObjectId(value4.childId) })
+                let mmm4 = await getMember({ _id: mongoose.Types.ObjectId(value4.childId) } )
+                console.log("Level #3 :", mmm1?.username, "(L1)", ii, mmm2?.username, "(L2)", iii,  mmm3?.username, "(L3)", iiii, mmm4?.username)
+
+                // level #4
+                _.map(mlm4?.childs, async(value5, iiiii)=>{
+                    let mlm5 = await Model.MLM.findOne({ parentId:  mongoose.Types.ObjectId(value5.childId) })
+                    let mmm5 = await getMember({ _id: mongoose.Types.ObjectId(value5.childId) } )
+                    console.log("Level #4 :", mmm1?.username, "(L1)", ii, mmm2?.username, "(L2)", iii,  mmm3?.username, "(L3)", iiii, mmm4?.username, "(L4)", iiiii, mmm5?.username)
+                    
+                    // level #5
+                    _.map(mlm5?.childs, async(value6, iiiiii)=>{
+                        let mlm6 = await Model.MLM.findOne({ parentId:  mongoose.Types.ObjectId(value6.childId) })
+                        let mmm6 = await getMember({ _id: mongoose.Types.ObjectId(value6.childId) } )
+                        console.log("Level #5 :", mmm1?.username, "(L1)", ii, mmm2?.username, "(L2)", iii,  mmm3?.username, "(L3)", iiii, mmm4?.username, "(L4)", iiiii, mmm5?.username, "(L5)", iiiiii, mmm6?.username)
+
+                    })
+                })
+            })
+        })
+    })
+
+    // console.log("mlmCal end ", parentId, level)
+    return result
 }

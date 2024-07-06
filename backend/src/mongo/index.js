@@ -315,7 +315,7 @@ const modelExists =()=>{
   Model.MLM.find({}, async(err, result)=> {
     if (result.length > 0) {
     } else {
-      let newMLM = new Model.MLM({ memberId: new mongoose.Types.ObjectId() });
+      let newMLM = new Model.MLM({});
       
       await newMLM.save();
       await Model.MLM.deleteMany({})

@@ -1,9 +1,14 @@
 import mongoose from 'mongoose';
 const Schema = mongoose.Schema
+
+var childSchema  = new Schema({
+    childId: { type: Schema.Types.ObjectId },
+    updateTime : { type : Date, default: Date.now },
+})
+
 const mlmSchema = new Schema({
-    memberId: { type: Schema.Types.ObjectId, required:[true, "Member-Id is a required field"] },
-    parentId: { type: Schema.Types.ObjectId },
-    childs: [Schema.Types.ObjectId],
+    parentId: { type: Schema.Types.ObjectId, default : null },
+    childs: [childSchema],
     level: Number
 },
 {

@@ -90,18 +90,21 @@ services:
   ################################
   mongo:
     image: mongo:6.0.1
-    # command: mongod --auth --port 29102
+    command: mongod --auth --port 29102
+    # command: mongod --port 29102
     expose:
       - 29102
     ports:
       - 29102:29102
+    # ports:
+    #   - 27017:27017
     environment:
       - MONGO_MAX_CONNECTIONS=100
-    # volumes:
+    volumes:
     #   - ./mongo-single/data:/data/db
     #   - ./mongo-single/restore:/mongo-single/restore
     #   - ./mongo-single/mongod.conf:/etc/mongod.conf
-    #   - ./restore:/home/restore
+      - ./mongo/mongod.conf:/etc/mongod.conf
     restart: always
     networks:
       - mlm
