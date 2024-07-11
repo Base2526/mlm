@@ -301,12 +301,13 @@ const modelExists =()=>{
   Model.Member.find({}, async(err, result)=> {
     if (result.length > 0) {
     } else {
-      let newMember = new Model.Member({
-                              username: "username",
-                              password: "password",
-                              email: "email@banlist.info",
-                              displayName: "displayName",
-                            });
+      let newMember = new Model.Member({current:{
+                                                  username: "username",
+                                                  password: "password",
+                                                  email: "email@banlist.info",
+                                                  displayName: "displayName",
+                                                }
+                                        });
       await newMember.save();
       await Model.Member.deleteMany({})
     }
@@ -355,6 +356,19 @@ connection.once("open", async function () {
   logger.info("Successfully : Connected to database!")
 
   modelExists()
+
+
+  // # MUST SET replSet before
+  // // Get the MongoDB client 
+  // const client = mongoose.connection.getClient();
+  // // Now you can use the MongoDB client for operations
+  // const database = client.db(process.env.MONGO_INITDB_DATABASE);
+  // const collection = database.collection("mlm");
+  // const changeStream = collection.watch();
+  // changeStream.on('change', next => {
+  //   // process next document
+  //   console.log("---------------change-----------------")
+  // });
 });
 
 export default connection;

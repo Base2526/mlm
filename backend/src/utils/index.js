@@ -591,9 +591,9 @@ export const getUser = async(query, without_password = true) =>{
 }
 
 export const getMember = async(query, without_password = true) =>{
-    let fields = { username: 1, password: 1, email: 1, displayName: 1 }
+    let fields = { "current.username": 1, "current.password": 1, "current.email": 1, "current.displayName": 1 }
     if(without_password){
-        fields = { username: 1, email: 1, displayName: 1 }
+        fields = { "current.username": 1, "current.email": 1, "current.displayName": 1 }
     }
     return  await Model.Member.findOne( query, fields )
 }
@@ -805,62 +805,76 @@ export const cloneLottery = async(id) => {
 }
 
 export const mlmCal = async(parentId, level) =>{
-    // console.log("mlmCal start ", parentId, level)
     let result = [];
-    // const helper = async(level) =>{
-    //     if(level == 0){
-    //         console.log("mlmCal > helper : end")
-    //         return
-    //     }else{
-    //         let mlm = await Model.MLM.findOne({ parentId })
 
-    //         result = [...result, level]
-    //         console.log("mlmCal > helper :", result, level, mlm)
-    //     }
-    //     helper(level-1)
-    // }
+    const process = async(parentId, level, parentUsername, parentParentId) => {
+        const mlm = await Model.MLM.findOne({ "current.parentId": mongoose.Types.ObjectId(parentId) });
+        const member = await getMember({ _id: mongoose.Types.ObjectId(parentId) });
+        if (!mlm || !member){
+            if(level == 1){
+                result.push({ name: member.username, memberId: parentId, parentId: null, amount: 250, otherInfo: `${member.username}` });
+            }else{
+                result.push({ name: member.username, memberId: parentId, parentId: parentParentId, amount: 250, otherInfo: `${member.username}` });
+            }
+            
+            return;
+        } 
 
-    // helper(level)
+        const levelInfo = `(L${level}) ${member.username}`;
+        const parentInfo = parentUsername ? `${parentUsername} ${levelInfo}` : levelInfo;
+        // console.log(`Level #${level}: ${parentInfo}, ${mlm.childs}`);
+        
+        result.push({ name: member.username, memberId: parentId, parentId: parentParentId, amount: 250, otherInfo: levelInfo });
 
-    let mlm1 = await Model.MLM.findOne({ parentId })
-    let mmm1 = await getMember({ _id: parentId } )
-    // level #1
-    _.map(mlm1?.childs, async(value2, ii)=>{
-        // console.log("childs :", value)
-        let mlm2 = await Model.MLM.findOne({ parentId:  mongoose.Types.ObjectId(value2.childId) })
-        let mmm2 = await getMember({ _id: mongoose.Types.ObjectId(value2.childId) } )
-        console.log("Level #1 :", mmm1?.username, "(L1)", ii, mmm2?.username)
+        if (mlm.current.childs && mlm.current.childs.length > 0 && level < 5) {
+            await Promise.all(mlm.current.childs.map(value => process(value.childId, level + 1, parentInfo, parentId)));
+        }
+    }
 
-        // level #2
-        _.map(mlm2?.childs, async(value3, iii)=>{
-            let mlm3 = await Model.MLM.findOne({ parentId:  mongoose.Types.ObjectId(value3.childId) })
-            let mmm3 = await getMember({ _id: mongoose.Types.ObjectId(value3.childId) } )
-            console.log("Level #2 :", mmm1?.username, "(L1)", ii, mmm2?.username, "(L2)", iii,  mmm3?.username)
+    await process(parentId, 1, "", null);
 
-            // level #3
-            _.map(mlm3?.childs, async(value4, iiii)=>{
-                let mlm4 = await Model.MLM.findOne({ parentId:  mongoose.Types.ObjectId(value4.childId) })
-                let mmm4 = await getMember({ _id: mongoose.Types.ObjectId(value4.childId) } )
-                console.log("Level #3 :", mmm1?.username, "(L1)", ii, mmm2?.username, "(L2)", iii,  mmm3?.username, "(L3)", iiii, mmm4?.username)
+    const convertToTreeNode = (array) => {
+        let tree = {};
+        let children = {};
+    
+        // Create a map of children
+        array.forEach(item => {
+            if (item.parentId === null) {
+                tree[item.memberId] = { ...item, children: [] };
+            } else {
+                if (!children[item.parentId]) {
+                    children[item.parentId] = [];
+                }
+                children[item.parentId].push(item);
+            }
+        });
+    
+        // Recursive function to build tree
+        const buildTree=(node) =>{
+            if (children[node.memberId]) {
+                node.children = children[node.memberId].map(child => {
+                    let newNode = { ...child, children: [] };
+                    buildTree(newNode);
+                    return newNode;
+                });
+            }
+        }
+    
+        // Build the tree starting from the root
+        Object.values(tree).forEach(root => {
+            buildTree(root);
+        });
+    
+        return Object.values(tree);
+    }
+    
+    return convertToTreeNode(result) //result
+}
 
-                // level #4
-                _.map(mlm4?.childs, async(value5, iiiii)=>{
-                    let mlm5 = await Model.MLM.findOne({ parentId:  mongoose.Types.ObjectId(value5.childId) })
-                    let mmm5 = await getMember({ _id: mongoose.Types.ObjectId(value5.childId) } )
-                    console.log("Level #4 :", mmm1?.username, "(L1)", ii, mmm2?.username, "(L2)", iii,  mmm3?.username, "(L3)", iiii, mmm4?.username, "(L4)", iiiii, mmm5?.username)
-                    
-                    // level #5
-                    _.map(mlm5?.childs, async(value6, iiiiii)=>{
-                        let mlm6 = await Model.MLM.findOne({ parentId:  mongoose.Types.ObjectId(value6.childId) })
-                        let mmm6 = await getMember({ _id: mongoose.Types.ObjectId(value6.childId) } )
-                        console.log("Level #5 :", mmm1?.username, "(L1)", ii, mmm2?.username, "(L2)", iii,  mmm3?.username, "(L3)", iiii, mmm4?.username, "(L4)", iiiii, mmm5?.username, "(L5)", iiiiii, mmm6?.username)
+export const revision = (model) =>{
+    // Save the current version to history
+    const current = model?.current;
+    const version = model?.history.length + 1;
 
-                    })
-                })
-            })
-        })
-    })
-
-    // console.log("mlmCal end ", parentId, level)
-    return result
+    return [...model?.history, { version: version, data: current, updatedAt: new Date() }];
 }
