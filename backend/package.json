@@ -32,6 +32,7 @@
     "apollo-server-express": "^3.11.1",
     "babel-jest": "^28.1.1",
     "body-parser": "^1.20.0",
+    "child_process": "^1.0.2",
     "cli-highlight": "^2.1.11",
     "crypto-js": "^4.1.1",
     "deepdash": "^5.3.9",

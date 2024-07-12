@@ -1,5 +1,10 @@
 # stage: 1
 FROM node:12-alpine
+
+# Install Docker CLI
+RUN apk update && \
+    apk add --no-cache docker openrc
+
 WORKDIR /app
 COPY . /app
 

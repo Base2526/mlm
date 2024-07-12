@@ -6,15 +6,18 @@ services:
   backend:
     build: 
       context: ./backend
-      dockerfile: Dockerfile.dev                
+      dockerfile: Dockerfile.dev   
+    container_name: mlm_backend          
     ports:
       - "4000:4000"
     env_file:
       - ./env/.env.dev.bankend
     volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
       - ./backend/src:/app/src        
       - ./uploads:/app/uploads    
     # environment:
+    #   - DOCKER_HOST=unix:///var/run/docker.sock
     #   # - CHOKIDAR_USEPOLLING=${CHOKIDAR_USEPOLLING}
     #   # - WATCHPACK_POLLING=${WATCHPACK_POLLING}
     #   # - RA_HOST=${RA_HOST}:${GRAPHQL_PORT}/
@@ -90,6 +93,7 @@ services:
   ################################ 
   mongo:
     image: mongo:6.0.1
+    container_name: mlm_mongo
     command: mongod --auth --port 29102
     # command: mongod --port 29102
     expose:
@@ -105,6 +109,8 @@ services:
     #   - ./mongo-single/restore:/mongo-single/restore
     #   - ./mongo-single/mongod.conf:/etc/mongod.conf
       - ./mongo/mongod.conf:/etc/mongod.conf
+      # - ./mongo/db:/data/db
+      - ./mongo/backups:/app/src/backups
     restart: always
     networks:
       - mlm
