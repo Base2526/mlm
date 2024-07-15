@@ -130,7 +130,7 @@ export const checkAuth = async(req) => {
                 //  1 : OK
                 if(expiredDays >= 0){
                     let userId  = jwt.verify(session.token, process.env.JWT_SECRET);
-                    let current_user = await getUser({_id: userId}) //await Model.User.findOne({_id: userId});
+                    let current_user = await getMember({_id: userId}) //await Model.User.findOne({_id: userId});
 
                     if(!_.isNull(current_user)){
                         return {
@@ -553,17 +553,15 @@ export const checkBalance = async(userId) =>{
 } 
 
 export const checkRole = (user) =>{
-    if(user?.roles){
+    if(user?.current?.roles){
         let { REACT_APP_USER_ROLES } = process.env
-
-        // console.log("checkRole :", user?.roles, REACT_APP_USER_ROLES)
-        if(_.includes( user?.roles, _.split(REACT_APP_USER_ROLES, ',' )[0]) ){
+        if(_.includes( user?.current?.roles, _.split(REACT_APP_USER_ROLES, ',' )[0]) ){
             return Constants.AMDINISTRATOR;
         }
-        else if(_.includes( user?.roles, _.split(REACT_APP_USER_ROLES, ',' )[2]) ){
+        else if(_.includes( user?.current?.roles, _.split(REACT_APP_USER_ROLES, ',' )[2]) ){
             return Constants.SELLER;
         }
-        else if(_.includes( user?.roles, _.split(REACT_APP_USER_ROLES, ',' )[1]) ){
+        else if(_.includes( user?.current?.roles, _.split(REACT_APP_USER_ROLES, ',' )[1]) ){
             return Constants.AUTHENTICATED;
         }
     }
@@ -591,9 +589,9 @@ export const getUser = async(query, without_password = true) =>{
 }
 
 export const getMember = async(query, without_password = true) =>{
-    let fields = { "current.username": 1, "current.password": 1, "current.email": 1, "current.displayName": 1 }
+    let fields = { "current.username": 1, "current.password": 1, "current.email": 1, "current.displayName": 1, "current.roles": 1 }
     if(without_password){
-        fields = { "current.username": 1, "current.email": 1, "current.displayName": 1 }
+        fields = { "current.username": 1, "current.email": 1, "current.displayName": 1, "current.roles": 1 }
     }
     return  await Model.Member.findOne( query, fields )
 }

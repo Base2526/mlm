@@ -1329,6 +1329,16 @@ export default {
       }
     },
 
+    async members(parent, args, context, info) {
+      let start = Date.now()
+      let { req } = context
+  
+      return {
+        status:true,
+        executionTime: `Time to execute = ${ (Date.now() - start) / 1000 } seconds`
+      }
+    },
+
     async mlmById(parent, args, context, info) {
       let start = Date.now()
       let { req } = context
@@ -1448,6 +1458,9 @@ export default {
       let start = Date.now()
       let {input} = args
 
+      console.log("login :", input, process.env.JWT_SECRET)
+
+      /*
       let username = input.username.toLowerCase()
 
       let user = Utils.emailValidate().test(username) 
@@ -1475,6 +1488,45 @@ export default {
       }
 
       await Model.User.updateOne({ _id: user?._id }, { lastAccess : Date.now() });
+      return {
+        status: true,
+        data: user,
+        sessionId: await Utils.getSession(user?._id, input),
+        executionTime: `Time to execute = ${ (Date.now() - start) / 1000 } seconds`
+      }
+      */
+
+      //  mlm login
+      let username = input.username.toLowerCase()
+
+      let user = Utils.emailValidate().test(username) 
+      if(Utils.emailValidate().test(username)){
+        // { "current.username": input.username?.toLowerCase() }
+        user = await Utils.getMember({"current.email": username}, false)
+        console.log("user : ", user)
+        if( _.isNull(user) ){
+          throw new AppError(Constants.USER_NOT_FOUND, 'USER NOT FOUND')
+        }
+        if(!_.isEqual(cryptojs.AES.decrypt(user?.current?.password, process.env.JWT_SECRET).toString(cryptojs.enc.Utf8), input.password)){
+          
+          console.log("e :", user?.current?.password, input?.password, cryptojs.AES.decrypt(user?.current?.password, process.env.JWT_SECRET).toString(cryptojs.enc.Utf8))
+          throw new AppError(Constants.PASSWORD_WRONG, 'PASSWORD WRONG')
+        }
+        // user = await Utils.getUserFull({email: username})
+      }else{
+        user = await Utils.getMember({"current.username":username}, false)
+        console.log("user : ", user)
+        if( _.isNull(user) ){
+          throw new AppError(Constants.USER_NOT_FOUND, 'USER NOT FOUND')
+        }
+        if(!_.isEqual(cryptojs.AES.decrypt(user?.current?.password, process.env.JWT_SECRET).toString(cryptojs.enc.Utf8), input.password)){
+          console.log("e :", user?.current?.password, input?.password, cryptojs.AES.decrypt(user?.current?.password, process.env.JWT_SECRET).toString(cryptojs.enc.Utf8))
+          throw new AppError(Constants.PASSWORD_WRONG, 'PASSWORD WRONG')
+        }
+        // user = await Utils.getUserFull({username})
+      }
+
+      await Model.Member.updateOne({ _id: user?._id }, { "current.lastAccess" : Date.now() });
       return {
         status: true,
         data: user,
@@ -3955,6 +4007,12 @@ export default {
     async test_addmember(parent, args, context, info) {
       let start     = Date.now()
       let { input } = args
+      let { req } = context
+
+      let { current_user } =  await Utils.checkAuth(req);
+
+      let role = Utils.checkRole(current_user)
+      if( role !==Constants.AMDINISTRATOR ) throw new AppError(Constants.UNAUTHENTICATED, 'permission denied')
 
       if(!_.isNull( await Utils.getMember({
                                             "$and": [{
